@@ -258,7 +258,7 @@
   function regionalLanguageFilter() { const v = regionConfig()?.original || ''; return v.includes('|') ? '' : v; }
   async function tmdb(path, params = {}) {
     if (!state.config.tmdbReady) throw new Error('TMDB is not configured.');
-    return getJSON(urlWithParams(`${API}/tmdb/${path}`, params));
+    return getJSON(urlWithParams(`tmdb/${path}`, params));
   }
   async function loadHomeLive() {
     setConnection('Loading catalogue through the same-origin Pages Function…');
@@ -274,8 +274,7 @@
     ];
     if (state.region !== 'GLOBAL') {
       const params = { ...common, region: state.region, sort_by: 'popularity.desc', page: 1 };
-      const orig = regionalLanguageFilter();
-      if (orig) params.with_original_language = orig;
+      if (regionalLanguageFilter()) params.with_original_language = regionalLanguageFilter();
       params['primary_release_date.lte'] = today();
       jobs.push(tmdb('discover/movie', params));
     }
