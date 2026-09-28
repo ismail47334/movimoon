@@ -225,7 +225,7 @@
     const item = state.heroItems[state.heroIndex % state.heroItems.length];
     const hero = byId('hero');
     hero.querySelector('.hero-image')?.remove();
-    const back = imageUrl(item.backdrop, 'w1280') || imageUrl(item.poster, 'w780');
+    const back = imageUrl(item.backdrop, 'original') || imageUrl(item.backdrop, 'w1280') || imageUrl(item.poster, 'w780');
     if (back) {
       const img = document.createElement('img'); img.src = back; img.alt = ''; img.className = 'hero-image'; img.loading = 'eager'; img.referrerPolicy = 'no-referrer';
       hero.querySelector('.hero-art').prepend(img);
@@ -478,16 +478,26 @@
     const detail = state.detail || item;
     const date = detail.release_date || detail.first_air_date || item.releaseDate;
     const rating = Number(detail.vote_average || item.rating || 0);
+    const runtime = detail.runtime || (detail.episode_run_time && detail.episode_run_time[0]) || '';
+    const poster = imageUrl(detail.poster_path || item.poster, 'w342');
     byId('dialog-title').textContent = detail.title || detail.name || item.title;
     byId('dialog-description').textContent = detail.overview || item.overview || 'No synopsis is available for this title.';
-    byId('dialog-meta').innerHTML = `<span>${item.mediaType === 'tv' ? 'SERIES' : 'FILM'}</span><span>•</span><span>${escapeHtml(String(date || '').slice(0, 4) || '—')}</span><span>•</span><span>★ ${rating ? rating.toFixed(1) : '—'}</span>${detail.runtime ? `<span>•</span><span>${escapeHtml(detail.runtime)} min</span>` : ''}`;
+    byId('dialog-meta').innerHTML = `
+      <span style="background:rgba(255,190,11,0.15); border:1px solid rgba(255,190,11,0.3); color:#ffbe0b; padding:3px 8px; border-radius:4px; font-weight:700;">★ ${rating ? rating.toFixed(1) : '—'}</span>
+      <span>${escapeHtml(String(date || '').slice(0, 4) || '2026')}</span>
+      ${runtime ? `<span>• ${runtime} min</span>` : ''}
+      <span style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700;">4K HD</span>
+      <span style="background:rgba(0,212,170,0.12); border:1px solid rgba(0,212,170,0.25); color:#00d4aa; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700;">${(detail.original_language || 'EN').toUpperCase()}</span>
+    `;
     const genres = Array.isArray(detail.genres) ? detail.genres.map(g => typeof g === 'string' ? g : g.name).filter(Boolean) : genreNames(item);
     byId('dialog-genres').innerHTML = genres.map(g => `<span class="filter-chip">${escapeHtml(g)}</span>`).join('');
     const art = byId('dialog-art');
-    const backdrop = imageUrl(detail.backdrop_path || item.backdrop, 'w1280');
+    const backdrop = imageUrl(detail.backdrop_path || item.backdrop, 'original') || imageUrl(detail.backdrop_path || item.backdrop, 'w1280');
     art.classList.toggle('has-backdrop', Boolean(backdrop));
-    art.style.backgroundImage = backdrop ? `linear-gradient(90deg,rgba(8,12,20,.9),rgba(8,12,20,.05)),url("${backdrop}")` : '';
-    byId('dialog-save').textContent = state.saved.includes(key) ? '♥ Saved to Watchlist' : '＋ Add to Watchlist';
+    art.style.backgroundImage = backdrop ? `url("${backdrop}")` : '';
+    // Add poster thumb inside art like CineVol
+    art.innerHTML = poster ? `<img src="${poster}" alt="" style="position:absolute; left:32px; bottom:32px; width:110px; height:165px; border-radius:12px; object-fit:cover; border:2px solid rgba(255,255,255,0.12); box-shadow:0 12px 32px rgba(0,0,0,0.6); z-index:3;">` : '';
+    byId('dialog-save').innerHTML = state.saved.includes(key) ? '♥ Saved' : '＋ Add to Watchlist';
     renderDetailTab();
     byId('detail-dialog').showModal();
   }
@@ -496,26 +506,52 @@
     const item = getItem(state.detailKey) || {};
     if (state.detailTab === 'cast') {
       const cast = detail.credits?.cast || [];
-      return cast.length ? `<ul class="cast-list">${cast.slice(0, 16).map(c => `<li>${escapeHtml(c.name)}${c.character ? ` · ${escapeHtml(c.character)}` : ''}</li>`).join('')}</ul>` : '<p>Cast details are not available for this title.</p>';
+      if (!cast.length) return '<p style="color:#9ca3af;">Cast details are not available for this title.</p>';
+      return `<ul class="cast-list">${cast.slice(0, 18).map(c => {
+        const img = c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : '';
+        return `<li><img class="cast-avatar" src="${img}" alt="" onerror="this.style.background='#1f2937'"><strong style="font-size:12px; color:#e2e8f0;">${escapeHtml(c.name)}</strong><span style="font-size:10px; color:#6b7280;">${escapeHtml(c.character || '')}</span></li>`;
+      }).join('')}</ul>`;
     }
     if (state.detailTab === 'trailers') {
       const videos = (detail.videos?.results || []).filter(v => v.site === 'YouTube' && /^[A-Za-z0-9_-]{6,20}$/.test(v.key || '') && /trailer|teaser/i.test(v.type || '')).slice(0, 5);
-      if (!videos.length) return '<p>No official trailer record is available from the configured catalogue.</p>';
-      return videos.map((v, i) => `<div class="trailer-card"><strong>${escapeHtml(v.name || 'Official trailer')}</strong><br><button class="button button-glass" type="button" data-play-trailer="${escapeHtml(v.key)}" data-trailer-index="${i}">Play trailer</button><a class="text-button" href="https://www.youtube.com/watch?v=${encodeURIComponent(v.key)}" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a><div id="trailer-frame-${i}"></div></div>`).join('');
+      if (!videos.length) return '<p style="color:#9ca3af;">No official trailer available.</p>';
+      return videos.map((v, i) => `<div class="trailer-card" style="margin-bottom:16px; background:#1f2937; border-radius:12px; padding:14px;"><strong>${escapeHtml(v.name || 'Official trailer')}</strong><br><br><button class="button button-primary" type="button" data-play-trailer="${escapeHtml(v.key)}" data-trailer-index="${i}">▶ Play trailer</button><a class="text-button" href="https://www.youtube.com/watch?v=${encodeURIComponent(v.key)}" target="_blank" rel="noopener noreferrer" style="margin-left:12px; color:#00d4aa;">YouTube ↗</a><div id="trailer-frame-${i}" style="margin-top:12px;"></div></div>`).join('');
     }
     if (state.detailTab === 'providers') {
-      if (!regionConfig()) return '<p>Choose a region in the top bar to request provider availability. No default region is inferred.</p>';
+      if (!regionConfig()) return '<p style="color:#9ca3af;">Choose a region in the top bar to request provider availability.</p>';
       const country = detail['watch/providers']?.results?.[state.region];
-      if (!country) return '<p>No provider data is listed for the selected region. Availability can change; use provider links for current details.</p>';
+      if (!country) return '<p style="color:#9ca3af;">No provider data for selected region.</p>';
       const providers = [...(country.flatrate || []), ...(country.rent || []), ...(country.buy || [])];
-      if (!providers.length) return '<p>No streaming, rent, or purchase providers are listed for this region.</p>';
+      if (!providers.length) return '<p style="color:#9ca3af;">No providers listed for this region.</p>';
       const link = /^https:\/\/www\.themoviedb\.org\//.test(country.link || '') ? country.link : 'https://www.themoviedb.org/';
-      return `<p>Availability listed by TMDB for ${escapeHtml(regionConfig().label)}. Check the provider’s current terms.</p><ul class="provider-list">${providers.map(p => `<li class="provider-chip"><a href="${link}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.provider_name)} ↗</a></li>`).join('')}</ul>`;
+      return `<p style="color:#9ca3af; margin-bottom:12px;">Availability for ${escapeHtml(regionConfig().label)}</p><ul class="provider-list" style="display:flex; flex-wrap:wrap; gap:8px; list-style:none; padding:0;">${providers.map(p => `<li class="provider-chip" style="background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:999px;"><a href="${link}" target="_blank" rel="noopener noreferrer" style="color:#cbd5e1; text-decoration:none;">${escapeHtml(p.provider_name)} ↗</a></li>`).join('')}</ul>`;
     }
-    return `<p>${escapeHtml(detail.overview || item.overview || 'Explore the available title metadata above.')}</p><p>Catalogue metadata is descriptive only and does not confer a right to play or distribute media.</p>`;
+    if (state.detailTab === 'related') {
+      const related = state.home.movies.slice(0, 12);
+      if (!related.length) return '<p style="color:#9ca3af;">No related titles.</p>';
+      return `<div class="related-grid">${related.map(r => {
+        const img = imageUrl(r.poster, 'w342');
+        return `<div class="related-card" data-open="${r.key}"><img src="${img}" alt=""><div class="rel-title">${escapeHtml(r.title)}</div></div>`;
+      }).join('')}</div>`;
+    }
+    return `<p style="color:#cbd5e1; line-height:1.7;">${escapeHtml(detail.overview || item.overview || 'Explore the available title metadata.')}</p>`;
   }
   function renderDetailTab() {
-    document.querySelectorAll('.detail-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.detailTab === state.detailTab));
+    document.querySelectorAll('.detail-tab').forEach(tab => {
+      const isActive = tab.dataset.detailTab === state.detailTab;
+      tab.classList.toggle('active', isActive);
+      if (tab.dataset.detailTab === 'related' && !tab.textContent.includes('Related')) tab.textContent = 'Related';
+    });
+    // Ensure Related tab exists
+    const tabsContainer = document.querySelector('.detail-tabs');
+    if (tabsContainer && !tabsContainer.querySelector('[data-detail-tab="related"]')) {
+      const relatedBtn = document.createElement('button');
+      relatedBtn.className = 'detail-tab';
+      relatedBtn.dataset.detailTab = 'related';
+      relatedBtn.setAttribute('role', 'tab');
+      relatedBtn.textContent = 'Related';
+      tabsContainer.appendChild(relatedBtn);
+    }
     byId('detail-tab-panel').innerHTML = detailTabContent();
     byId('dialog-player').hidden = !state.config.playerConfigured || !state.detailKey || state.detailKey.startsWith('demo:');
   }
@@ -740,7 +776,6 @@
     if (event.target.id === 'sort-select') { state.sort = event.target.value; state.page = 1; loadCatalog(); }
   }
   function installEvents() {
-    const heroEl = byId('hero'); if (heroEl) { heroEl.addEventListener('mouseenter', stopHeroAutoSlide); heroEl.addEventListener('mouseleave', startHeroAutoSlide); }
     document.addEventListener('click', onClick);
     document.addEventListener('submit', onSubmit);
     document.addEventListener('change', onChange);
