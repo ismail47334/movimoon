@@ -124,7 +124,7 @@
   }
   function setConnection(text, isError = false) {
     const box = byId('connection-banner');
-    if (box) { box.textContent = text; box.classList.toggle('is-error', isError); }
+    if (box) { if (/TMDB connected|TMDB is configured|Regional discovery|Region is user-selected/i.test(text)) { box.style.display='none'; } else { box.textContent = text; box.classList.toggle('is-error', isError); } }
     const side = byId('sidebar-status-detail');
     if (side) {
       const compact = /TMDB (?:is )?not configured|TMDB is currently not configured/i.test(text) ? 'TMDB not configured · sample mode' : text;
@@ -225,23 +225,43 @@
     const item = state.heroItems[state.heroIndex % state.heroItems.length];
     const hero = byId('hero');
     hero.querySelector('.hero-image')?.remove();
-    const back = imageUrl(item.backdrop, 'w1280');
+    const back = imageUrl(item.backdrop, 'w1280') || imageUrl(item.poster, 'w780');
     if (back) {
       const img = document.createElement('img'); img.src = back; img.alt = ''; img.className = 'hero-image'; img.loading = 'eager'; img.referrerPolicy = 'no-referrer';
       hero.querySelector('.hero-art').prepend(img);
     }
     byId('hero-title').textContent = item.title;
     byId('hero-description').textContent = item.overview || 'Explore title details, cast, trailers, and provider information.';
-    byId('hero-year').textContent = item.year || 'DISCOVER';
-    byId('hero-kind').textContent = item.mediaType === 'tv' ? 'FEATURED SERIES' : 'FEATURED FILM';
+    byId('hero-year').textContent = item.year || '2026';
+    byId('hero-kind').textContent = item.mediaType === 'tv' ? 'FEATURED SERIES' : 'FEATURE FILM';
     byId('hero-rating').textContent = item.rating ? item.rating.toFixed(1) : '—';
     byId('hero-details').dataset.open = item.key;
     byId('hero-save').dataset.save = item.key;
     const saved = state.saved.includes(item.key);
     byId('hero-save').innerHTML = `<span>${saved ? '♥' : '＋'}</span> ${saved ? 'Saved to Watchlist' : 'Add to Watchlist'}`;
     byId('hero-pagination').innerHTML = state.heroItems.map((_, i) => `<button class="hero-dot${i === state.heroIndex ? ' active' : ''}" type="button" data-slide="${i}" aria-label="Show spotlight ${i + 1}"${i === state.heroIndex ? ' aria-current="true"' : ''}></button>`).join('');
-    byId('hero-disclaimer').textContent = state.config.tmdbReady ? 'Discovery metadata only · playback requires your authorized source' : 'Fictional sample catalogue · no stream or media source';
+    // Vertical thumbs like CineVol
+    const thumbsHolder = byId('hero-thumbs');
+    if (thumbsHolder) {
+      thumbsHolder.innerHTML = state.heroItems.map((it, i) => {
+        const thumbUrl = imageUrl(it.backdrop, 'w300') || imageUrl(it.poster, 'w185');
+        return `<button class="hero-thumb${i === state.heroIndex ? ' active' : ''}" type="button" data-slide="${i}" aria-label="${it.title}">${thumbUrl ? `<img src="${thumbUrl}" alt="" loading="lazy">` : ''}</button>`;
+      }).join('');
+    }
   }
+  let heroAutoTimer = null;
+  function startHeroAutoSlide() {
+    stopHeroAutoSlide();
+    heroAutoTimer = setInterval(() => {
+      if (!state.heroItems.length) return;
+      state.heroIndex = (state.heroIndex + 1) % state.heroItems.length;
+      renderHero();
+    }, 5000);
+  }
+  function stopHeroAutoSlide() {
+    if (heroAutoTimer) { clearInterval(heroAutoTimer); heroAutoTimer = null; }
+  }
+
   async function loadDemo() {
     try {
       const data = await getJSON('./data/catalog-demo.json');
@@ -298,7 +318,7 @@
       const failures = results.filter(r => r.status === 'rejected').length;
       setConnection(failures ? `TMDB is connected; ${failures} optional collection(s) could not be loaded. Other available rows remain usable.` : 'TMDB connected through Pages Functions. The API credential stays server-side.');
     }
-    saveItems(); renderHome();
+    saveItems(); renderHome(); startHeroAutoSlide();
     if (state.route !== 'home') await routeChanged();
   }
   function currentGenreList() {
@@ -720,6 +740,7 @@
     if (event.target.id === 'sort-select') { state.sort = event.target.value; state.page = 1; loadCatalog(); }
   }
   function installEvents() {
+    const heroEl = byId('hero'); if (heroEl) { heroEl.addEventListener('mouseenter', stopHeroAutoSlide); heroEl.addEventListener('mouseleave', startHeroAutoSlide); }
     document.addEventListener('click', onClick);
     document.addEventListener('submit', onSubmit);
     document.addEventListener('change', onChange);
