@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080C14">
+  <meta name="description" content="MoviMoon — discover films, series, regional releases, and editorial pages.">
+  <title>MoviMoon — Discover</title>
+  <link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./css/movimoon.css">
+  <link rel="stylesheet" href="./css/integrations.css">
+  <link rel="stylesheet" href="./css/cinevol.css">
+  <script src="./js/app.js" defer></script>
+</head>
+<body>
+  <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+  <div class="sidebar-scrim" id="sidebar-scrim"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#home" aria-label="MoviMoon home"><img src="./assets/logo.svg" width="36" height="36" alt=""><span>Movi<span class="brand-accent">Moon</span></span></a>
+    <nav class="side-nav">
+      <span class="nav-caption">Discover</span>
+      <button class="nav-link active" data-route="home"><span class="nav-icon">⌂</span>Home</button>
+      <button class="nav-link" data-route="movies"><span class="nav-icon">▣</span>Movies</button>
+      <button class="nav-link" data-route="shows"><span class="nav-icon">▤</span>TV Shows</button>
+      <button class="nav-link" data-route="trending"><span class="nav-icon">↗</span>Trending <span class="nav-tag">HOT</span></button>
+      <button class="nav-link" data-route="top-rated"><span class="nav-icon">☆</span>Top Rated</button>
+      <button class="nav-link" data-route="upcoming"><span class="nav-icon">◷</span>Coming Soon</button>
+      <span class="nav-caption nav-caption-library">My Library</span>
+      <button class="nav-link" data-route="watchlist"><span class="nav-icon">♡</span>My Watchlist <span class="count-badge" id="watchlist-count">0</span></button>
+      <button class="nav-link" data-route="history"><span class="nav-icon">◴</span>Recently Viewed</button>
+      <button class="nav-link" data-route="live"><span class="nav-icon">◉</span>Live TV <span class="nav-tag nav-tag-outline">SETUP</span></button>
+      <button class="nav-link" data-route="blog"><span class="nav-icon">▤</span>Journal</button>
+    </nav>
+    <div class="sidebar-note" id="sidebar-status"><span class="note-dot"></span><span>Checking integrations…<small id="sidebar-status-detail">No location lookup</small></span></div>
+    <div class="sidebar-foot"><span class="avatar">M</span><span><strong>MoviMoon</strong><small>Explore something new</small></span><span class="foot-dots">•••</span></div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-title">
+        <button class="menu-button" id="menu-button" aria-label="Open navigation" aria-expanded="false">☰</button>
+        <div><h1 id="page-title">Discover</h1><div class="breadcrumb"><span>MoviMoon</span><b>›</b><span id="breadcrumb-label">Home</span></div></div>
+      </div>
+      <nav class="type-tabs" aria-label="Catalogue type">
+        <button class="type-tab active" data-route="home">All</button>
+        <button class="type-tab" data-route="movies">Movies</button>
+        <button class="type-tab" data-route="shows">TV Shows</button>
+        <button class="type-tab" data-route="live">◉ Live TV</button>
+      </nav>
+      <div class="topbar-actions">
+        <label class="region-control" title="Choose a region explicitly; this preference is stored in this browser only">
+          <span aria-hidden="true">◎</span><span class="visually-hidden">Region for release discovery</span>
+          <select id="region-select" aria-label="Choose region">
+            <option value="GLOBAL">Global</option><option value="BD">Bangladesh</option><option value="IN">India</option><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="JP">Japan</option><option value="DE">Germany</option><option value="FR">France</option><option value="BR">Brazil</option><option value="KR">South Korea</option><option value="NG">Nigeria</option><option value="ZA">South Africa</option><option value="AE">United Arab Emirates</option><option value="NZ">New Zealand</option><option value="SG">Singapore</option>
+          </select>
+        </label>
+        <form class="search-form" id="search-form" role="search">
+          <span class="search-glyph" aria-hidden="true">⌕</span>
+          <input id="global-search" type="search" placeholder="Search movies, shows…" autocomplete="off" aria-label="Search catalogue">
+          <button class="search-submit" type="submit" aria-label="Search">↵</button>
+          <div class="search-suggestions" id="search-suggestions" hidden></div>
+        </form>
+        <button class="icon-button notification-button" id="about-shortcut" aria-label="About and credits" title="About and credits">i</button>
+      </div>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <section class="page active" id="page-home" aria-label="Home">
+        <div class="hero" id="hero">
+          <div class="hero-art" aria-hidden="true"><div class="hero-orb"></div><div class="hero-rings"></div><span class="hero-mark">MM</span><div class="hero-grain"></div></div>
+          <div class="hero-shade"></div>
+          <div class="hero-content">
+            <div class="eyebrow"><span class="eyebrow-pip"></span><span id="hero-kicker">MOVIMOON SPOTLIGHT</span><span class="eyebrow-line"></span></div>
+            <div class="hero-meta"><span id="hero-kind">FEATURED</span><span class="meta-sep">•</span><span id="hero-year">DISCOVER</span><span class="meta-sep">•</span><span class="rating">★ <span id="hero-rating">—</span></span></div>
+            <h2 class="hero-title" id="hero-title">Find your next story</h2>
+            <p class="hero-description" id="hero-description">A familiar MoviMoon discovery experience, rebuilt with a secure server-side catalogue connector.</p>
+            <div class="hero-actions"><button class="button button-primary" id="hero-details" type="button"><span>▶</span> Explore title</button><button class="button button-glass" id="hero-save" type="button"><span>＋</span> Add to Watchlist</button></div>
+            <div class="hero-disclaimer" id="hero-disclaimer">No stream or full-length media is included</div>
+          </div>
+          <div class="hero-pagination" id="hero-pagination" aria-label="Spotlight slides"></div>
+          <div class="hero-thumbs" id="hero-thumbs" aria-label="Featured titles"></div>
+        </div>
+        <div class="content-wrap home-content">
+          <div class="connection-banner" id="connection-banner" role="status" aria-live="polite">Loading site configuration…</div>
+          <div class="ticker"><div class="ticker-label"><span>↗</span> Global Trending</div><div class="ticker-track" id="ticker-track"></div></div>
+          <div id="home-sections"></div>
+          <div class="catalog-notice"><span class="notice-symbol">✦</span><div><strong>Regional discovery is a release filter</strong><p>Global Trending remains global. The selected region is applied only to regional movie discovery; it is never inferred from your IP.</p></div><button class="text-button" data-route="about">About & credits <span>→</span></button></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-catalog" aria-label="Catalogue">
+        <div class="content-wrap page-content">
+          <div class="page-heading"><div><span class="overline" id="catalog-overline">MOVIMOON COLLECTION</span><h2 id="catalog-title">Browse titles</h2><p id="catalog-description">Explore movies and television.</p></div><label class="sort-control">Sort by <select id="sort-select"><option value="popularity.desc">Popularity</option><option value="vote_average.desc">Rating</option><option value="release_date.desc">Newest</option><option value="title.asc">A–Z</option></select></label></div>
+          <div class="filter-bar"><div class="filter-group" id="genre-filters" aria-label="Filter by genre"></div><button class="clear-filters" id="clear-filters" type="button">Reset filters</button></div>
+          <div class="result-line"><span id="result-count">0 titles</span><span class="results-note" id="results-source">Source will appear here</span></div>
+          <div class="catalog-grid" id="catalog-grid"></div>
+          <div class="empty-state" id="empty-state" hidden><span>⌕</span><h3>No titles found</h3><p>Try a different search or clear the filters.</p><button class="button button-primary" id="empty-reset" type="button">Clear filters</button></div>
+          <div class="pagination-row"><button class="button button-glass" id="page-prev" type="button">← Previous</button><span id="page-label">Page 1</span><button class="button button-glass" id="page-next" type="button">Next →</button></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-watchlist" aria-label="My watchlist"><div class="content-wrap page-content"><div class="page-heading"><div><span class="overline">YOUR LIBRARY</span><h2>My Watchlist</h2><p>Your saved titles stay in this browser on this device.</p></div></div><div class="catalog-grid" id="watchlist-grid"></div><div class="empty-state" id="watchlist-empty"><span>♡</span><h3>Your list is ready for a first pick</h3><p>Save a title to keep it here. This list uses local browser storage only.</p><button class="button button-primary" data-route="trending">Explore trending</button></div></div></section>
+
+      <section class="page" id="page-history" aria-label="Recently viewed"><div class="content-wrap page-content"><div class="page-heading"><div><span class="overline">YOUR LIBRARY</span><h2>Recently Viewed</h2><p>Titles you opened in this browser.</p></div><button class="button button-glass" id="clear-history" type="button">Clear history</button></div><div class="catalog-grid" id="history-grid"></div><div class="empty-state" id="history-empty"><span>◴</span><h3>No recent titles</h3><p>Open a title and it will appear here on this device.</p></div></div></section>
+
+      <section class="page" id="page-live" aria-label="Live TV">
+        <div class="content-wrap page-content">
+          <div class="page-heading"><div><span class="overline">AUTHORIZED SOURCE ONLY</span><h2>Live TV</h2><p>The player shell is ready for a source you are authorized to embed. This build ships with no channel or stream URLs.</p></div></div>
+          <div class="player-disclosure"><strong>Playback disclosure</strong><p>Only HTTPS URLs matching the exact configured HTTPS origin allow-list are accepted. The external frame is sandboxed; no proxy, redirect, geo-bypass, or third-party stream is bundled.</p></div>
+          <div class="player-layout">
+            <div class="channel-panel"><div class="section-head"><div class="section-heading"><span class="section-icon">◉</span><div><h3 class="section-title">Available channels</h3><div class="section-subtitle" id="channel-note">No channel sources configured</div></div></div></div><div id="channel-list" class="channel-list"></div></div>
+            <div class="player-panel"><div class="player-frame" id="player-stage"><div class="player-placeholder" id="player-placeholder"><span class="player-placeholder-icon">◉</span><strong>Player not configured</strong><p>Add approved channels and an HTTPS embed template in the setup guide.</p></div><iframe id="player-embed" title="Authorized live player" sandbox="allow-scripts allow-same-origin allow-presentation" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen hidden></iframe></div><div class="player-caption" id="player-caption">No media will load until you select a configured channel.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-blog" aria-label="Journal"><div class="content-wrap page-content"><div class="page-heading"><div><span class="overline">MOVIMOON JOURNAL</span><h2>Stories & updates</h2><p>Served from local JSON by default, or from the optional D1 content adapter.</p></div><a class="button button-glass" href="/api/feed.json" target="_blank" rel="noopener noreferrer">Open JSON Feed ↗</a></div><div class="journal-grid" id="journal-grid"></div><div class="empty-state" id="journal-empty" hidden><span>▤</span><h3>No published posts</h3><p>Add posts to <code>public/data/content.json</code> or connect D1.</p></div></div></section>
+
+      <section class="page" id="page-article" aria-label="Journal article"><div class="content-wrap article-wrap"><button class="back-link" data-route="blog">← Back to Journal</button><span class="overline" id="article-date">MOVIMOON JOURNAL</span><h2 id="article-title">Article</h2><p class="article-excerpt" id="article-excerpt"></p><div class="article-body" id="article-body"></div><div class="comments-panel"><h3>Comments</h3><p id="comments-status">Comments are available only when an owner configures moderated storage.</p><div id="comment-list"></div><form id="comment-form" hidden><label>Your name<input name="name" required maxlength="80" autocomplete="name"></label><label>Comment<textarea name="body" required minlength="3" maxlength="2000" rows="4"></textarea></label><div id="turnstile-widget"></div><button class="button button-primary" type="submit">Submit for moderation</button></form></div></div></section>
+
+      <section class="page" id="page-info" aria-label="Information page"><div class="content-wrap info-wrap"><button class="back-link" data-route="home">← Back to Discover</button><span class="overline" id="info-kicker">MOVIMOON · CREDITS</span><h2 id="info-title">About MoviMoon</h2><div class="info-card" id="info-body"></div></div></section>
+    </main>
+
+    <footer class="site-footer"><div class="footer-brand"><img src="./assets/logo.svg" width="30" height="30" alt=""><span>Movi<span class="brand-accent">Moon</span></span><p>A responsive catalogue interface with optional server-side integrations.</p></div><div class="footer-links"><div><strong>Explore</strong><button data-route="movies">Movies</button><button data-route="shows">TV Shows</button><button data-route="watchlist">Watchlist</button><button data-route="live">Live TV</button><button data-route="blog">Journal</button></div><div><strong>Information</strong><button data-route="about">About & credits</button><button data-route="privacy">Privacy policy</button><button data-route="terms">Terms</button><button data-route="disclaimer">Disclaimer</button></div></div><div class="footer-bottom"><span>© <span id="current-year"></span> MoviMoon</span><span>Region is user-selected · no IP geolocation</span><button data-route="about">Credits</button></div><div class="tmdb-attribution"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer"><img src="./assets/tmdb-logo.svg" alt="The Movie Database (TMDB)" loading="lazy"></a><span>This product uses the TMDB API but is not endorsed or certified by TMDB.</span></div></footer>
+  </div>
+
+  <nav class="mobile-bar" aria-label="Mobile navigation"><button class="mobile-nav-link active" data-route="home"><span>⌂</span>Home</button><button class="mobile-nav-link" data-route="movies"><span>▣</span>Movies</button><button class="mobile-nav-link" data-route="watchlist"><span>♡</span>My List</button><button class="mobile-nav-link" data-route="trending"><span>↗</span>Trending</button></nav>
+
+  <dialog class="detail-dialog" id="detail-dialog" aria-labelledby="dialog-title"><button class="dialog-close" id="dialog-close" aria-label="Close">×</button><div class="dialog-art" id="dialog-art"><span class="dialog-art-mark">MM</span><span class="dialog-art-caption">MOVIMOON</span></div><div class="dialog-content"><div class="dialog-meta" id="dialog-meta"></div><h2 id="dialog-title"></h2><p id="dialog-description"></p><div class="dialog-genres" id="dialog-genres"></div><div class="detail-tabs" role="tablist" aria-label="Title information"><button class="detail-tab active" data-detail-tab="overview" role="tab">Overview</button><button class="detail-tab" data-detail-tab="cast" role="tab">Cast</button><button class="detail-tab" data-detail-tab="trailers" role="tab">Trailers</button><button class="detail-tab" data-detail-tab="providers" role="tab">Where to watch</button></div><div class="detail-tab-panel" id="detail-tab-panel"></div><div class="dialog-actions"><button class="button button-primary" id="dialog-save" type="button">＋ Add to Watchlist</button><button class="button button-glass" id="dialog-player" type="button" hidden>Open configured player</button></div><div class="dialog-notice"><span>ⓘ</span><span>Catalogue metadata is not a playback right. Only an owner-configured authorized player can be used.</span></div></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
