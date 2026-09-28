@@ -73,14 +73,16 @@ function withSecurity(response, env, requestUrl) {
 }
 function safeSlug(value) { return /^[a-z0-9][a-z0-9-]{0,99}$/.test(value); }
 function allowedTmdbPath(path) {
-  if (["movie/popular", "movie/top_rated", "movie/upcoming", "tv/popular", "tv/top_rated", "genre/movie/list", "genre/tv/list", "search/movie", "search/tv", "search/multi", "discover/movie"].includes(path)) return true;
+  if (["movie/popular", "movie/top_rated", "movie/upcoming", "tv/popular", "tv/top_rated", "genre/movie/list", "genre/tv/list", "search/movie", "search/tv", "search/multi", "discover/movie", "discover/tv"].includes(path)) return true;
   if (/^trending\/(?:all|movie|tv)\/(?:day|week)$/.test(path)) return true;
   return /^(?:movie|tv)\/\d+(?:\/(?:credits|videos|similar|recommendations|watch\/providers))?$/.test(path);
 }
 function validTmdbQuery(path, incoming) {
   const common = new Set(["language", "page"]);
   const search = new Set(["query", "include_adult", "region", "year", "primary_release_year"]);
-  const discover = new Set(["region", "sort_by", "with_genres", "with_original_language", "with_release_type", "primary_release_date.gte", "primary_release_date.lte", "release_date.gte", "release_date.lte", "vote_average.gte", "vote_count.gte"]);
+  const discover = new Set(["region", "sort_by", "with_genres", "with_original_language", "with_release_type", "with_networks", "with_companies", "primary_release_date.gte", "primary_release_date.lte", "release_date.gte", "release_date.lte", "vote_average.gte", "vote_count.gte"]); "release_date.lte", "vote_average.gte", "vote_count.gte"]);
+  if (key === "with_networks" && !/^[\d,|]+$/.test(value)) return { error: "Invalid network filter." };
+if (key === "with_companies" && !/^[\d,|]+$/.test(value)) return { error: "Invalid company filter." };
   const params = new URLSearchParams();
   for (const [key, value] of incoming) {
     if (key === "api_key" || key === "append_to_response" || key === "include_adult") {
