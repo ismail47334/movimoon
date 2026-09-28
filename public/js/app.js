@@ -200,166 +200,89 @@
     if (!list?.length) return '';
     return `<section class="catalog-section" aria-labelledby="section-${key}"><div class="section-head"><div class="section-heading"><span class="section-icon ${tone}">${key === 'trending' ? '↗' : key === 'region' ? '◎' : key === 'top' ? '★' : key === 'shows' ? '▤' : key === 'upcoming' ? '◷' : '✦'}</span><div><h2 class="section-title" id="section-${key}">${escapeHtml(title)}</h2><div class="section-subtitle">${escapeHtml(subtitle)}</div></div></div><button class="section-view-all" type="button" data-route="${route}">View all <span>→</span></button></div><div class="horizontal-row">${list.map(item => cardMarkup(item, true)).join('')}</div></section>`;
   }
+
   function renderHome() {
-    const home = state.home;
-    const region = regionConfig();
-    const subtitle = state.config.tmdbReady
-      ? (region ? `${region.label} release-region filter · popularity order` : 'Popular movie discovery · choose a region for release-filtered results')
-      : (region ? `Local sample row · ${region.label} is your saved preference only` : 'Local sample row · no location lookup');
-    const rows = [
-      sectionMarkup('trending', 'Trending Now', 'Global TMDB trending · day window', home.trending || [], 'trending'),
-      sectionMarkup('region', region ? `Popular in ${region.label}` : 'Popular Movies', subtitle, home.region || [], 'movies', 'violet'),
-      sectionMarkup('movies', 'Popular Movies', 'Popular titles from the selected catalogue source', home.movies || [], 'movies', 'gold'),
-      sectionMarkup('top', 'Top Rated Films', 'Higher-rated movie picks', home.top || [], 'top-rated', 'violet'),
-      sectionMarkup('shows', 'Popular TV Shows', 'Series and episodic stories', home.shows || [], 'shows', 'pink'),
-      sectionMarkup('upcoming', 'Coming Soon', 'Upcoming movie releases', home.upcoming || [], 'upcoming')
-    ].join('');
-    byId('home-sections').innerHTML = rows || '<div class="empty-state"><h3>No catalogue rows yet</h3><p>Check the Pages Functions configuration or try again shortly.</p></div>';
-    const tick = home.trending || [];
-    byId('ticker-track').innerHTML = tick.slice(0, 10).map((item, i) => `<button class="ticker-item" type="button" data-open="${escapeHtml(item.key)}"><b>${String(i + 1).padStart(2, '0')}</b>${escapeHtml(item.title)} <span>★ ${item.rating ? item.rating.toFixed(1) : '—'}</span></button>`).join('');
-    state.heroItems = (home.trending?.length ? home.trending : state.demo).slice(0, 5);
-    renderHero();
-  }
-  function renderHero() {
-    if (!state.heroItems.length) return;
-    const item = state.heroItems[state.heroIndex % state.heroItems.length];
-    const hero = byId('hero');
-    hero.querySelector('.hero-image')?.remove();
-    const back = imageUrl(item.backdrop, 'original') || imageUrl(item.backdrop, 'w1280') || imageUrl(item.poster, 'w780');
-    if (back) {
-      const img = document.createElement('img'); img.src = back; img.alt = ''; img.className = 'hero-image'; img.loading = 'eager'; img.referrerPolicy = 'no-referrer';
-      hero.querySelector('.hero-art').prepend(img);
+    const holder = byId('home-sections');
+    if (!holder) return;
+    if (!state.home.trending) { holder.innerHTML = ''; return; }
+
+    const trending = state.home.trending || [];
+    const statsHtml = `
+      <div class="cv-stats">
+        <div class="cv-stat"><div class="cv-stat-icon"><i class="fa-solid fa-film"></i></div><div><strong>20K+</strong><span>Total Movies</span></div></div>
+        <div class="cv-stat"><div class="cv-stat-icon tv"><i class="fa-solid fa-tv"></i></div><div><strong>20K+</strong><span>TV Shows</span></div></div>
+        <div class="cv-stat"><div class="cv-stat-icon lang"><i class="fa-solid fa-globe"></i></div><div><strong>50+</strong><span>Languages</span></div></div>
+        <div class="cv-stat"><div class="cv-stat-icon hd"><i class="fa-solid fa-circle"></i></div><div><strong>4K</strong><span>Ultra HD</span></div></div>
+      </div>
+    `;
+
+    const genrePills = ['Action','Comedy','Horror','Sci-Fi','Drama','Romance','Crime','Animation','Fantasy','Thriller','Adventure','Mystery'];
+    const genreHtml = `<div class="cv-genre-pills">${genrePills.map(g=>`<button class="cv-genre-pill" data-genre="${g}">${g}</button>`).join('')}</div>`;
+
+    const tickerHtml = `
+      <div class="cv-ticker">
+        <div class="cv-ticker-label"><i class="fa-solid fa-fire"></i> TRENDING</div>
+        <div class="cv-ticker-track" id="ticker-track">
+          ${trending.slice(0,7).map((it,i)=>`<span class="cv-ticker-item"><b>${i+1}</b> ${escapeHtml(it.title)} <small>★ ${it.rating.toFixed(1)}</small></span>`).join('')}
+        </div>
+      </div>
+    `;
+
+    function cardHtml(item, badge) {
+      const poster = imageUrl(item.poster, 'w342');
+      const isNew = item.year === '2026' || item.year === '2025';
+      return `<article class="cv-card" data-item="${escapeHtml(item.key)}">
+        <div class="cv-card-poster">${poster ? `<img src="${poster}" alt="" loading="lazy">` : `<div class="cv-card-fallback">${escapeHtml(item.title)}</div>`}
+          <span class="cv-badge ${isNew ? 'new' : 'hd'}">${isNew ? 'NEW' : 'HD'}</span>
+          <span class="cv-rating">★ ${item.rating ? item.rating.toFixed(1) : 'N/A'}</span>
+          <div class="cv-card-overlay"><button class="cv-play"><i class="fa-solid fa-play"></i></button></div>
+        </div>
+        <div class="cv-card-info"><h4>${escapeHtml(item.title)}</h4><div class="cv-card-meta"><span>${item.year || '2026'}</span><span class="cv-genre">${(item.genres[0] || genreNames(item)[0] || 'Drama')}</span></div></div>
+      </article>`;
     }
-    byId('hero-title').textContent = item.title;
-    byId('hero-description').textContent = item.overview || 'Explore title details, cast, trailers, and provider information.';
-    byId('hero-year').textContent = item.year || '2026';
-    byId('hero-kind').textContent = item.mediaType === 'tv' ? 'FEATURED SERIES' : 'FEATURE FILM';
-    byId('hero-rating').textContent = item.rating ? item.rating.toFixed(1) : '—';
-    byId('hero-details').dataset.open = item.key;
-    byId('hero-save').dataset.save = item.key;
-    const saved = state.saved.includes(item.key);
-    byId('hero-save').innerHTML = `<span>${saved ? '♥' : '＋'}</span> ${saved ? 'Saved to Watchlist' : 'Add to Watchlist'}`;
-    byId('hero-pagination').innerHTML = state.heroItems.map((_, i) => `<button class="hero-dot${i === state.heroIndex ? ' active' : ''}" type="button" data-slide="${i}" aria-label="Show spotlight ${i + 1}"${i === state.heroIndex ? ' aria-current="true"' : ''}></button>`).join('');
-    // Vertical thumbs like CineVol
-    const thumbsHolder = byId('hero-thumbs');
-    if (thumbsHolder) {
-      thumbsHolder.innerHTML = state.heroItems.map((it, i) => {
-        const thumbUrl = imageUrl(it.backdrop, 'w300') || imageUrl(it.poster, 'w185');
-        return `<button class="hero-thumb${i === state.heroIndex ? ' active' : ''}" type="button" data-slide="${i}" aria-label="${it.title}">${thumbUrl ? `<img src="${thumbUrl}" alt="" loading="lazy">` : ''}</button>`;
-      }).join('');
+
+    function landscapeCardHtml(item) {
+      const back = imageUrl(item.backdrop, 'w780') || imageUrl(item.poster, 'w500');
+      return `<article class="cv-landscape-card" data-item="${escapeHtml(item.key)}">
+        <div class="cv-land-poster">${back ? `<img src="${back}" alt="">` : ''}<span class="cv-badge movie">MOVIE</span><span class="cv-rating">★ ${item.rating.toFixed(1)}</span></div>
+        <div class="cv-land-info"><h4>${escapeHtml(item.title)}</h4><p>${item.year || '2026'} · ${escapeHtml((genreNames(item).slice(0,2).join(', ') || 'Drama'))}</p></div>
+      </article>`;
     }
-  }
-  let heroAutoTimer = null;
-  function startHeroAutoSlide() {
-    stopHeroAutoSlide();
-    heroAutoTimer = setInterval(() => {
-      if (!state.heroItems.length) return;
-      state.heroIndex = (state.heroIndex + 1) % state.heroItems.length;
-      renderHero();
-    }, 5000);
-  }
-  function stopHeroAutoSlide() {
-    if (heroAutoTimer) { clearInterval(heroAutoTimer); heroAutoTimer = null; }
+
+    function sectionHtml(title, subtitle, items, icon, cardFn, viewAllRoute) {
+      if (!items || !items.length) return '';
+      const viewAll = viewAllRoute ? `<button class="cv-viewall" data-route="${viewAllRoute}">View All →</button>` : '';
+      return `<section class="cv-section">
+        <div class="cv-section-head"><div class="cv-section-title"><span class="cv-section-icon">${icon}</span><div><h3>${title}</h3><p>${subtitle}</p></div></div>${viewAll}</div>
+        <div class="cv-row">${items.slice(0,8).map(cardFn).join('')}</div>
+      </section>`;
+    }
+
+    const top10 = trending.slice(0,10);
+    const top10Html = `<section class="cv-section"><div class="cv-section-head"><div class="cv-section-title"><span class="cv-section-icon crown">👑</span><div><h3>Top 10 Today</h3><p>Most viewed recently</p></div></div></div><div class="cv-top10">${top10.map((it,i)=>`<div class="cv-top10-item" data-item="${escapeHtml(it.key)}"><span class="cv-rank">${i+1}</span><img src="${imageUrl(it.poster,'w92')}" alt=""><div><strong>${escapeHtml(it.title)}</strong><small>★ ${it.rating.toFixed(1)}</small></div></div>`).join('')}</div></section>`;
+
+    holder.innerHTML = `
+      ${tickerHtml}
+      ${statsHtml}
+      ${genreHtml}
+      ${sectionHtml('Trending Now', 'What everyone is watching', state.home.trending, '🔥', cardHtml, 'trending')}
+      ${sectionHtml('Trending Now Bangladesh', 'Popular in Bangladesh', state.home.regionalBD.length ? state.home.regionalBD : state.home.movies, '🌍', cardHtml, 'movies')}
+      ${sectionHtml('New Releases', '', state.home.upcoming.length ? state.home.upcoming : state.home.movies, '✨', cardHtml, 'upcoming')}
+      ${sectionHtml('Indian Movies', 'Bollywood Tollywood Kollywood Popular in India', state.home.indian.length ? state.home.indian : state.home.movies, '🎬', cardHtml, 'movies')}
+      ${sectionHtml('Top Rated Films', 'Critically acclaimed masterpieces', state.home.top, '🏆', landscapeCardHtml, 'top-rated')}
+      ${sectionHtml('Popular TV Shows', 'Binge-worthy series', state.home.shows, '📺', cardHtml, 'shows')}
+      ${top10Html}
+      ${sectionHtml('Netflix Originals', 'Netflix exclusive series and movies', state.home.netflix.length ? state.home.netflix : state.home.shows, 'N', cardHtml, 'shows')}
+      ${sectionHtml('Amazon Prime Shows', 'Prime Video exclusives', state.home.prime.length ? state.home.prime : state.home.shows, 'A', cardHtml, 'shows')}
+      ${sectionHtml('Apple TV+ Shows', 'Apple Originals', state.home.apple.length ? state.home.apple : state.home.shows, '🍎', cardHtml, 'shows')}
+      ${sectionHtml('Disney+ Shows', 'Disney Marvel Star Wars Pixar', state.home.disney.length ? state.home.disney : state.home.shows, 'D', cardHtml, 'shows')}
+      ${sectionHtml('Peacock TV Shows', 'NBC Peacock originals', state.home.peacock.length ? state.home.peacock : state.home.shows, 'P', cardHtml, 'shows')}
+      ${sectionHtml('Max Shows', 'HBO Max originals', state.home.max.length ? state.home.max : state.home.shows, 'M', cardHtml, 'shows')}
+      ${sectionHtml('Hulu Originals', 'Hulu exclusive series', state.home.hulu.length ? state.home.hulu : state.home.shows, 'H', cardHtml, 'shows')}
+      ${sectionHtml('Coming Soon', '', state.home.upcoming, '📅', cardHtml, 'upcoming')}
+    `;
   }
 
-  async function loadDemo() {
-    try {
-      const data = await getJSON('./data/catalog-demo.json');
-      state.demo = Array.isArray(data) ? data.map(normalizeDemo) : [];
-    } catch { state.demo = []; }
-    if (!state.config.tmdbReady) {
-      state.home = demoCollections();
-      setConnection('TMDB is not configured. No TMDB API call was made; the site is using its fictional local sample catalogue.');
-      renderHome();
-      if (state.route !== 'home') await routeChanged();
-    }
-  }
-  function langForRegion() { return 'en-US'; }
-  function regionalLanguageFilter() { const v = regionConfig()?.original || ''; return v.includes('|') ? '' : v; }
-  async function tmdb(path, params = {}) {
-    if (!state.config.tmdbReady) throw new Error('TMDB is not configured.');
-    return getJSON(urlWithParams(`tmdb/${path}`, params));
-  }
-  async function loadHomeLive() {
-    setConnection('Loading catalogue through the same-origin Pages Function…');
-    const common = { language: langForRegion() };
-    const jobs = [
-      tmdb('trending/all/day', common),
-      tmdb('movie/popular', { ...common, page: 1 }),
-      tmdb('movie/top_rated', { ...common, page: 1 }),
-      tmdb('tv/popular', { ...common, page: 1 }),
-      tmdb('movie/upcoming', { ...common, page: 1 }),
-      tmdb('genre/movie/list', common),
-      tmdb('genre/tv/list', common)
-    ];
-    if (state.region !== 'GLOBAL') {
-      const params = { ...common, region: state.region, sort_by: 'popularity.desc', page: 1 };
-      if (regionalLanguageFilter()) params.with_original_language = regionalLanguageFilter();
-      params['primary_release_date.lte'] = today();
-      jobs.push(tmdb('discover/movie', params));
-    }
-    const results = await Promise.allSettled(jobs);
-    const getList = i => results[i]?.status === 'fulfilled' ? itemsFromResponse(results[i].value) : [];
-    const trending = getList(0);
-    state.home = {
-      trending,
-      movies: getList(1),
-      top: getList(2),
-      shows: getList(3),
-      upcoming: getList(4),
-      region: state.region === 'GLOBAL' ? getList(1) : getList(7)
-    };
-    if (results[5]?.status === 'fulfilled') GENRES.movie = results[5].value.genres || GENRES.movie;
-    if (results[6]?.status === 'fulfilled') GENRES.tv = results[6].value.genres || GENRES.tv;
-    if (!trending.length && !state.home.movies.length) {
-      state.home = demoCollections();
-      setConnection('TMDB is configured but did not return catalogue data. Showing the local sample while the provider is unavailable.', true);
-    } else {
-      const failures = results.filter(r => r.status === 'rejected').length;
-      setConnection(failures ? `TMDB is connected; ${failures} optional collection(s) could not be loaded. Other available rows remain usable.` : 'TMDB connected through Pages Functions. The API credential stays server-side.');
-    }
-    saveItems(); renderHome(); startHeroAutoSlide();
-    if (state.route !== 'home') await routeChanged();
-  }
-  function currentGenreList() {
-    const which = state.route === 'shows' ? 'tv' : 'movie';
-    return GENRES[which] || [];
-  }
-  function renderGenreFilters() {
-    const holder = byId('genre-filters'); if (!holder) return;
-    const genres = currentGenreList();
-    const buttons = [`<button type="button" class="filter-chip${state.selectedGenre ? '' : ' selected'}" data-genre="">All genres</button>`];
-    genres.forEach(g => buttons.push(`<button type="button" class="filter-chip${String(state.selectedGenre) === String(g.id) ? ' selected' : ''}" data-genre="${escapeHtml(g.id)}">${escapeHtml(g.name)}</button>`));
-    holder.innerHTML = buttons.join('');
-  }
-  function routeTitle() { return TITLES[state.route] || 'Discover'; }
-  function filterGenre(items) {
-    if (!state.selectedGenre) return items;
-    const id = Number(state.selectedGenre);
-    const name = currentGenreList().find(g => g.id === id)?.name;
-    return items.filter(item => (item.genreIds || []).includes(id) || (name && genreNames(item).includes(name)));
-  }
-  function sortItems(items) {
-    const out = [...items];
-    if (state.sort === 'vote_average.desc') out.sort((a, b) => b.rating - a.rating || b.voteCount - a.voteCount);
-    else if (state.sort === 'release_date.desc') out.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
-    else if (state.sort === 'title.asc') out.sort((a, b) => a.title.localeCompare(b.title));
-    else out.sort((a, b) => b.popularity - a.popularity);
-    return out;
-  }
-  function fallbackRouteItems() {
-    let list = state.demo;
-    if (state.route === 'movies') list = list.filter(x => x.mediaType === 'movie');
-    else if (state.route === 'shows') list = list.filter(x => x.mediaType === 'tv');
-    else if (state.route === 'top-rated') list = [...list].sort((a, b) => b.rating - a.rating);
-    else if (state.route === 'upcoming') list = list.filter(x => x.section === 'upcoming');
-    else if (state.route === 'trending') list = list.filter(x => x.section === 'trending' || x.rating >= 8.5);
-    else if (state.route === 'search') {
-      const q = state.query.toLocaleLowerCase();
-      list = list.filter(x => [x.title, x.overview, ...genreNames(x)].join(' ').toLocaleLowerCase().includes(q));
-    }
-    return sortItems(filterGenre(list));
-  }
   async function loadCatalog() {
     const catalogRoutes = ['movies', 'shows', 'trending', 'top-rated', 'upcoming', 'search'];
     if (!catalogRoutes.includes(state.route)) return;
